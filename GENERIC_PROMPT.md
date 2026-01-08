@@ -75,7 +75,7 @@ Default to research over action. Do not jump into implementation unless clearly 
 
 <avoid_anti_patterns>
 **Anti-Over-Engineering:** Simple > Complex. Standard lib first. Minimal abstractions.
-**YAGNI:** No unused features/configs. No premature opt. No cargo-culting.
+**YAGNI (MANDATORY):** No unused features/configs. No premature opt. No cargo-culting.
 **Tooling:** Must use `ast-grep`/`ripgrep`/`fd` for searching. Never use `grep -r` or `find`.
 **Keep Simple:** Edit existing files first. Remove dead code. Defer abstractions.
 </avoid_anti_patterns>
@@ -238,16 +238,17 @@ Default to research over action. Do not jump into implementation unless clearly 
 - `ls` → USE `eza`
 - `find` → USE `fd`
 - `grep` → USE `rg` or `ast-grep`
-- `cat` for reading files → USE `bat -P -p -n`
+- `cat` for reading files → USE `bat -P -p -n --color=always`
 - `ps` → USE `procs`
 - `diff` → USE `difft`
 - `time` → USE `hyperfine`
 - `sed` → ALWAYS USE `srgn` or `ast-grep -U` or `native-patch`
 - `rm` / `rm -rf` → USE `rip` (trash-based, safer) [MANDATORY]
+- `perl` / `perl -i` / `perl -pe` → USE `ast-grep -U` or `awk`
 
 **Tool preferences:**
 
-- Prefer context args: `ast-grep -C`, `rg -C`, `bat -r`
+- Prefer context args: `ast-grep -C`, `rg -C`, `bat -r`, Read tool `-offset/-limit`
 
 <headless_enforcement>
 **Headless & Non-Interactive Protocol [MANDATORY]:**
@@ -397,7 +398,7 @@ Workspace editing tools. Excellent for straightforward edits, multi-file changes
 
 ### 4) Core System & File Ops
 - **`eza`**: `ls` replacement. `eza --tree --level=2` | `eza -l --git` | `eza --icons` | `eza -D` | `eza -l --sort=size`. **NEVER use ls—always eza --git-ignore.**
-- **`bat`**: `cat` replacement. `bat -P -p --line-range 10:20 file.rs`. Flags: `P`(no pager), `-p` (plain), `-l` (lang), `-A` (show-all), `-r` (range), `-d` (diff), `-n` (show line numbers; can be combined with `-p` for using line numbers with plain text); default baseline args as `bat -P -p -n`.
+- **`bat`**: `cat` replacement. `bat -P -p --line-range 10:20 file.rs`. Flags: `P`(no pager), `-p` (plain), `-l` (lang), `-A` (show-all), `-r` (range), `-d` (diff), `-n` (show line numbers; can be combined with `-p` for using line numbers with plain text); default baseline args as `bat -P -p -n --color=always`.
 
 ### 5) fd [SCOPE FIRST - MANDATORY]
 Modern find replacement - use FIRST before large operations to scope target files.
@@ -623,7 +624,7 @@ Don't hold back. Give it your all.
 - NEVER `ls` - use `eza` instead
 - NEVER `cat` for reading - use Read tool instead
 - NEVER text-based search for code patterns - use `ast-grep` instead
-- NEVER `perl` / `perl -i` / `perl -pe` - use `ast-grep -U` or `awk` instead
+- NEVER `perl` / `perl -i` / `perl -pe` - use `ast-grep -U` or `awk`
 
 **Violation consequences:** Commands using banned tools will be REJECTED. Rewrite using approved alternatives.
 

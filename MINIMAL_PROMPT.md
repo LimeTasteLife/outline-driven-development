@@ -15,9 +15,9 @@ Default: Research over action. Act only with explicit instruction.
 
 <tools>
 **Primary:** `tokei` (scope), `fd` (discover), `ast-grep` (code), `srgn` (regex), `repomix` (context, compress recommended)
-**Support:** `eza` (list), `bat -P -p -n` (read), `rg` (text), `difft` (diff), `jql`/`jaq` (JSON), `fend` (calc)
+**Support:** `eza` (list), `bat -P -p -n --color=always` (read), `rg` (text), `difft` (diff), `jql`/`jaq` (JSON), `fend` (calc)
 
-**BANNED:** `ls`→eza | `find`→fd | `grep -r`→rg/ast-grep | `cat`→`bat -P -p -n` | `sed -i`→ast-grep -U/srgn | `diff`→difft | `rm`→rip | `perl -i`→ast-grep/awk
+**BANNED:** `ls`→eza | `find`→fd | `grep -r`→rg/ast-grep | `cat`→`bat -P -p -n --color=always` | `sed -i`→ast-grep -U/srgn | `diff`→difft | `rm`→rip | `perl -i`→ast-grep/awk
 
 **Prefer:** context args `ast-grep -C`, `rg -C`, `bat -r`
 
