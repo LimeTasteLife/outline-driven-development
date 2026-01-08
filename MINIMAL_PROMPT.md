@@ -9,13 +9,15 @@ Batch independent: `[read(F₁),...,read(Fₙ)]` | Dependent: Batch₁→...→B
 **Confidence:** `C = (fam + (1-cx) + (1-risk) + (1-scope)) / 4`
 0.8+: Act→Verify | 0.5-0.8: Act→V→Expand→V | 0.3-0.5: Research→Plan→Test | <0.3: Decompose→Propose
 Default: Research over action. Act only with explicit instruction.
+**Multi-agent:** `git clone --shared . ./.outline/agent-<id>` for isolation
+**Commits:** Atomic, Conventional: `<type>[(!)][(scope)]: <desc>`. Types: feat|fix|docs|style|refactor|perf|test|chore
 </orchestration>
 
 <tools>
-**Primary:** `fd` (discover), `ast-grep` (code), `srgn` (regex), `repomix` (context)
-**Support:** `eza` (list), `bat` (read), `rg` (text), `tokei` (metrics), `difft` (diff), `jql`/`jaq` (JSON), `fend` (calc)
+**Primary:** `tokei` (scope), `fd` (discover), `ast-grep` (code), `srgn` (regex), `repomix` (context, compress recommended)
+**Support:** `eza` (list), `bat -P -p -n` (read), `rg` (text), `difft` (diff), `jql`/`jaq` (JSON), `fend` (calc)
 
-**BANNED:** `ls`→eza | `find`→fd | `grep -r`→rg/ast-grep | `cat`→bat | `sed -i`→ast-grep -U/srgn | `diff`→difft | `perl -i`→ast-grep/awk
+**BANNED:** `ls`→eza | `find`→fd | `grep -r`→rg/ast-grep | `cat`→`bat -P -p -n` | `sed -i`→ast-grep -U/srgn | `diff`→difft | `rm`→rip | `perl -i`→ast-grep/awk
 
 **Headless:** No TUIs. No pagers. `--json` preferred. Stdin-wait = failure.
 
