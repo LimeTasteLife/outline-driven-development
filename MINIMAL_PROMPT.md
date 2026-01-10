@@ -27,6 +27,11 @@ Default: Research over action. Act only with explicit instruction.
 **fd-First:** Before large ops: `fd -e <ext> -E <exclude>` → validate scope → execute
 
 **Thinking:** `sequential-thinking` [ALWAYS] | `actor-critic-thinking` | `shannon-thinking`
+
+<example>
+<user>Find and refactor old API calls</user>
+<response>`fd -e ts` → `ast-grep -p 'oldApi($A)' -r 'newApi($A)' -C 3` → verify → `-U`</response>
+</example>
 </tools>
 
 <ast-grep>
@@ -83,4 +88,9 @@ Accuracy ≥95% | O(n log n) baseline, target O(1)/O(log n) | p95 budgets | OWAS
 
 <workflow>
 Requirements → `fd` discovery → 6-stage design → Contract (I/O/invariants/errors) → Implement (`ast-grep`→edit→commit) → Build→Lint→Test → Cleanup
+
+<example>
+<user>Add logging to all handlers</user>
+<response>[high conf: 0.8+] `tokei src/` → `fd -e ts handlers/` → `ast-grep -p 'function $H($$$) { $$$B }' -r 'function $H($$$) { log.info("$H"); $$$B }' -C 3` → verify → `-U` → test</response>
+</example>
 </workflow>
