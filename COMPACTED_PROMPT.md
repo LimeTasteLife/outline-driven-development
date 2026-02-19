@@ -58,6 +58,7 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 **Ask (when unclear):** Multiple interpretations | Ambiguous scope | Trade-offs | Missing context | Confidence <0.5. Format: 2-4 concrete options. Skip: unambiguous, explicit constraints, trivial.
 **FORBIDDEN:** Assuming broader scope | "I'll do X unless..." | Over-asking trivial tasks
 
+**Research vs Act:** Research: unfamiliar code, unclear deps, high risk, confidence <0.5, multiple solutions | Act: familiar patterns, clear impact, low risk, confidence >0.7, single solution
 **Tool Selection Matrix:** ast-grep (code structure/refactoring) | srgn (grammar-scoped regex) | rg (text/comments/non-code) | tokei (scope assessment) | fd/rg/xargs pipelines (multi-stage)
 
 **Accuracy Patterns:**
@@ -76,7 +77,7 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 | Bug understood | 0.8 | Direct+test | Before/after |
 | Bulk transform | 0.7 | Progressive | Batch verify |
 
-**ADR Template:** Status: [Proposed|Accepted|Deprecated|Superseded] | Context: P(problem), C(constraints), O(objectives) | Decision: maximize sum(Oi*wi) subject to C | Consequences: benefits, trade-offs, risks | Alternatives: considered/rejected
+**ADR Template:** Status: [Proposed|Accepted|Deprecated|Superseded] | Context: P(problem), C(constraints), O(objectives), R(requirements) | Decision: maximize sum(Oi*wi) subject to C | Consequences: benefits, trade-offs, risks | Alternatives: considered/rejected
 </decisions>
 
 <avoid_anti_patterns>
@@ -130,14 +131,14 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 2. **Context:** Gather only essential context, targeted searches
 3. **Design:** Sketch delta diagrams (architecture, data-flow, concurrency, memory, optimization, tidiness)
 4. **Contract:** Define inputs/outputs, invariants, error modes, 3-5 edge cases
-5. **Implementation:** Search (`ast-grep`) -> Edit (`ast-grep`/`native-patch`) -> State (`git branchless move --fixup`)
+5. **Implementation:** Search (`ast-grep`) -> Edit (`ast-grep`/`Edit suite`) -> `git sl` (verify graph) -> State (`git branchless move --fixup`) -> Iterate
 6. **Quality gates:** `git test run 'stack()' --exec '<test>'` -> Build -> Lint/Typecheck -> Tests
 7. **Completion:** Apply atomic commit strategy, summarize changes, clean up temp files
 
 **Surgical Editing:** Find -> Copy -> Paste -> Verify
 - **Find:** `ast-grep run -p 'function $N($$$A) { $$$B }' -l ts` | Scoped: `--inline-rules 'rule: { pattern: { context: "fn f() { $A }", selector: "call_expression" } }'`
 - **Copy:** `ast-grep -p '$PAT' -C 3` | `bat -r 10:20 file.ts`
-- **Paste:** `ast-grep run -p '$O.old($A)' -r '$O.new({ val: $A })' -U` | Manual: native-patch
+- **Paste:** `ast-grep run -p '$O.old($A)' -r '$O.new({ val: $A })' -U` | Manual: Edit suite
 - **Verify:** `difft --display inline original modified`
 - **Tactics:** Rename: `-p 'class $N' -r 'class ${N}V2'` | Delete: `-p 'console.log($$$)' -r ''` | Migrate: `-p '$A.done($B)' -r 'await $A; $B()'`
 **Principles:** Precision > Speed | Preview > Hope | Surgical > Wholesale | Minimal Context
@@ -149,7 +150,7 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 4. **Architecture:** components, interfaces, errors, security, invariants
 5. **Optimization:** bottlenecks, cache, O(?) targets, p50/p95/p99, alloc budgets
 6. **Tidiness:** naming, coupling/cohesion, cognitive(<15)/cyclomatic(<10), YAGNI
-**Order:** Architecture->Data-flow->Concurrency->Memory->Optimization->Tidiness. Prefer **nomnoml** diagrams.
+**Protocol:** R = T(input) -> V(R) ∈ {pass,warn,fail} -> A(R); iterate. Order: Architecture->Data-flow->Concurrency->Memory->Optimization->Tidiness. Prefer **nomnoml** diagrams.
 
 **Pre-implementation checklist (BLOCKED until complete):**
 Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory management schema | Type stable design | Error handling strategy | Performance optimization plan | Reliability assessment | Security guards (when applicable)
@@ -165,6 +166,7 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
 - **Mid:** Each step produces expected result | State consistent | Can roll back
 - **Post:** Change applied everywhere | No unintended mods | Tests pass
 **Progressive:** 1 instance -> 10% -> 100%. Risk: `(files * complexity * blast) / (coverage + 1)` -- Low(<10): standard | Med(10-50): progressive | High(>50): plan first
+**Post-Transform:** `ast-grep -U` -> `difft` -> Chunk warnings: MICRO(5), SMALL(15), MEDIUM(50)
 **Git Branchless Verification:** Graph: `git sl` after changes | Test: `git test run 'draft()' --exec '<cmd>'` | Sync: `git branchless sync` before converging | Cleanup: `git hide 'draft() & tests.failed()'`
 
 **Safety:**
@@ -201,10 +203,10 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
 | 3 | ast-grep | AST patterns, 90% error reduction |
 | 3 | srgn | Grammar-aware regex replacement |
 | 4 | repomix | Context packing (MCP) |
-| 5 | native-patch | File edits, multi-file changes |
+| 5 | Edit suite | File edits, multi-file changes |
 | 6 | rg | Text/comments/strings (after fd) |
 | 7 | eza | Directory listing (--git-ignore) |
-| 8 | git-branchless | VCS enhancement layer |
+| 2 | git-branchless | VCS enhancement layer |
 | 9 | jql | JSON query -- PRIMARY (simple syntax) |
 | 10 | jaq | jq-compatible JSON processor |
 | 11 | huniq | Hash-based deduplication |
@@ -225,6 +227,7 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
 - **`rg`**: `rg "pattern" -t rs` | `rg -F 'literal'` | `rg pattern -A 3 -B 2` | `rg pattern --json`
 
 **fd-First [MANDATORY before large ops]:** `fd -e <ext>` discover -> `fd -E` exclude noise -> validate count (<50) -> execute scoped.
+**fd-First Triggers:** Codebase-wide refactoring | Unknown file locations | Pattern search across >3 dirs | Multi-file edits -> fd scope check REQUIRED
 **fd patterns:** `fd -e py -E venv` | `fd -e rs --max-depth 3` | `fd -g '*.test.ts'` | `fd . src/ -e tsx` | `fd -H pattern`
 **Placeholders:** `{}` (full) | `{/}` (basename) | `{//}` (parent) | `{.}` (no ext) | `{/.}` (basename no ext)
 **Execute:** Per-file: `fd -e rs -x rustfmt {}` | Batch: `fd -e py -X black` | Parallel: `fd -j 4 -e rs -x cargo fmt` | Recent: `fd -e ts --changed-within 1d` | Size: `fd -e json -S +1k`
@@ -234,6 +237,7 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
   - Meta-vars: `$VAR` (single), `$$$ARGS` (multi), `$_VAR` (non-capturing). Valid: uppercase `$META`. Invalid: `$invalid` (lowercase), `$123` (num start), `$KEBAB-CASE` (dash)
   - Strictness: cst (strictest), smart (default), ast, relaxed, signature (permissive)
   - Workflow: Search -> Preview (-C) -> Apply (-U) [never skip preview]
+  - Best Practices: Always `-C 3` before `-U` | Specify `-l language` | Invalid pattern? Use pattern object with context+selector | Ambiguous C/Go? Add context+selector | Missing stopBy:end with inside/has? Add for full traversal
   - **Language-Specific:**
     - **TypeScript:** `ast-grep -p 'import { $$$IMPORTS } from "$MODULE"' -l ts -C 3`
     - **Rust:** `ast-grep -p 'fn $NAME($$$PARAMS) -> Result<$RET, $ERR> { $$$ }' -l rs -C 3`
@@ -243,9 +247,10 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
 - **`srgn`** [GRAMMAR-AWARE]: `--<lang> <scope> 'pattern' -- 'replacement'`
   - Modes: Action (transform) | Search (no action -> ripgrep-like code search)
   - Langs: `--python/--py`, `--rust/--rs`, `--typescript/--ts`, `--go`, `--c`, `--csharp/--cs`, `--hcl`
-  - Scopes: comments, strings, imports, fn/func/def, class, struct, enum, trait, mod, etc. (language-specific). Dynamic: `fn~PATTERN`, `struct~[tT]est`, `func~Handle`
-  - Actions: `-u/-l/-t` (case), `-n` (normalize), `-g` (german), `-S` (symbols), `-d` (delete), `-s` (squeeze)
-  - Options: `--glob` (single, no `{a,b}`), `--dry-run`, `-j` (OR scopes), `--invert`, `-L` (literal), `--fail-none`
+  - Scopes: Python: comments|strings|imports|doc-strings|function-names|function-calls|class|def|async-def|methods|class-methods|static-methods|with|try|lambda|globals|variable-identifiers|types|identifiers. Rust: comments|doc-comments|uses|strings|attribute|struct|enum|fn|impl-fn|pub-fn|priv-fn|const-fn|async-fn|unsafe-fn|extern-fn|test-fn|trait|impl|impl-type|impl-trait|mod|mod-tests|type-def|identifier|type-identifier|closure|unsafe|enum-variant (supports `fn~PAT`). TypeScript: comments|strings|imports|function|async-function|sync-function|method|constructor|class|enum|interface|try-catch|var-decl|let|const|var|type-params|type-alias|namespace|export. Go: comments|strings|imports|expression|type-def|type-alias|struct|interface|const|var|func|method|free-func|init-func|type-params|defer|select|go|switch|labeled|goto|struct-tags (supports `func~PAT`). C: comments|strings|includes|type-def|enum|struct|variable|function|function-def|function-decl|switch|if|for|while|do|union|identifier|declaration|call-expression. C#: comments|strings|usings|struct|enum|interface|class|method|variable-declaration|property|constructor|destructor|field|attribute|identifier. HCL: variable|resource|data|output|provider|required-providers|terraform|locals|module|variables|resource-names|resource-types|data-names|data-sources|comments|strings
+  - Dynamic: `fn~PATTERN`, `struct~[tT]est`, `func~Handle` | Custom: `--<lang>-query 'ts-query'`
+  - Actions: `-u` (upper) `-l` (lower) `-t` (title) `-n` (normalize) `-S` (symbols) `-d` (delete) `-s` (squeeze)
+  - Options: `--glob` (single value, cannot repeat) `--dry-run` `-j` (OR scopes) `--invert` `-L` (literal) `-H` (hidden) `--sorted`
   - Per-file: `fd -e <ext> --strip-cwd-prefix -x srgn --glob '{}' --stdin-detection force-unreadable [OPTIONS]`
   - Scope Intersection: `srgn --rust pub-enum --rust type-identifier 'Type'` (AND by default)
   - vs ast-grep: srgn = scoped regex in AST nodes | ast-grep = structural patterns with metavariables
@@ -258,6 +263,8 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
 - **`eza`**: `eza --tree --level=2` | `eza -l --git` | `eza -l --sort=size`
 - **`bat`**: `bat -P -p -n --color=always` (default). Flags: `-l` (lang), `-A` (show-all), `-r` (range), `-d` (diff), `-n` (line numbers)
 - **`zoxide`**: `z foo` | `zi foo` (fzf) | `zoxide query|add|remove`
+- **`rargs`**: `rargs -p '(.*)\.txt' mv {0} {1}.bak`
+- **`nomino`**: `nomino -r '(.*)\.bak' '{1}.txt'` | **`hck`**: `hck -f 1,3 -d ':'` | **`shellharden`**: `shellharden --replace script.sh`
 - **`git-branchless`**: `git sl` `git next/prev` `git move` `git amend` `git sync` `git submit`
 - **`mergiraf`**: `mergiraf merge base.rs left.rs right.rs -o out.rs`
 - **`difft`**: `difft old.rs new.rs` | `difft --display inline f1 f2`
@@ -277,8 +284,10 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
 </code_tools>
 
 <design>
+Modern, elegant UI/UX. Don't hold back.
+
 **Tokens:** MUST use design system tokens, not hardcoded values.
-**Density:** 2-3x denser. Spacing: 4/8/12/16/24/32/48/64px. Medium-high density default.
+**Density:** 2-3x denser. Spacing: 4/8/12/16/24/32/48/64px. Medium-high density default. Ask preference when ambiguous.
 **Paradigms:** Post-minimalism [default] | Neo-brutalism | Glassmorphism | Material 3 | Fluent. Avoid naive minimalism.
 **Forbidden:** Purple-blue/purple-pink | `transition: all` | `font-family: system-ui` | Pure purple/red/blue/green | Self-generated palettes | Gradients (unless explicitly requested, NEVER on buttons/titles)
 **Gate:** Design excellence >= 95%
