@@ -23,7 +23,7 @@ Auto-Skip: <50 LOC, trivial, user requests direct. Mandatory: 2+ concerns, 2+ di
 | Multi-concern/unknown | 2 | Explore+Plan |
 | Cross-module/>5 files | 3 | 2 Explore+Plan |
 | Architectural | 3-5 | Parallel domain |
-**FORBIDDEN:** Guessing params needing other results | Ignoring logical order | Batching dependent ops | >1¶ before agents | Sequential when parallel | >50 LOC without Plan | Agent sub-agents (depth: 1)
+**FORBIDDEN:** Guessing params needing other results | Ignoring logical order | Batching dependent ops | >1¶ before agents | Sequential when parallel
 </orchestration>
 
 <tools>
