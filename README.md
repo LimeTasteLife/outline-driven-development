@@ -45,7 +45,7 @@ cargo binstall -y bat tokei git-delta just raff-cli difftastic git-branchless zo
   - ```gemini extensions install https://github.com/OutlineDriven/odin-gemini-cli-extension```
 - **Claude Code:** <https://github.com/OutlineDriven/odin-claude-plugin>
   - Quick Install:
-    - ```git clone https://github.com/OutlineDriven/odin-claude-plugin.git && cp -r ./odin-claude-plugin/ ~/.claude/ && claude plugin marketplace add OutlineDriven/odin-claude-plugin && claude plugin install odin@odin-marketplace```
+    - ```git clone https://github.com/OutlineDriven/odin-claude-plugin.git && cp ./odin-claude-plugin/CLAUDE.md ~/.claude/CLAUDE.md && cp ./odin-claude-plugin/settings.json ~/.claude/settings.json && claude plugin marketplace add OutlineDriven/odin-claude-plugin && claude plugin install odin@odin-marketplace```
 - **Codex CLI:** <https://github.com/OutlineDriven/odin-codex-plugin>
   - Quick Install:
     - ```git clone https://github.com/OutlineDriven/odin-codex-plugin.git && cp -r ./odin-codex-plugin/ ~/.codex/```
