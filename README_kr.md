@@ -38,16 +38,6 @@ cargo install ast-grep ripgrep fd-find eza lsd
 cargo binstall -y bat tokei git-delta just raff-cli difftastic git-branchless zoxide procs bfs fselect tealdeer srgn nomino shellharden grex mergiraf jaq jql hck huniq lemmeknow hyperfine rargs eva fend rip2 sccache
 ```
 
-#### Install Landrun (CLI Sandbox)
-
-Install go if not installed: <https://go.dev/dl/>
-
-##### Install
-
-```bash
-go install github.com/zouuup/landrun/cmd/landrun@latest
-```
-
 ## 설치
 
 - **Gemini CLI:** <https://github.com/OutlineDriven/odin-gemini-cli-extension>
@@ -55,7 +45,7 @@ go install github.com/zouuup/landrun/cmd/landrun@latest
   - ```gemini extensions install https://github.com/OutlineDriven/odin-gemini-cli-extension```
 - **Claude Code:** <https://github.com/OutlineDriven/odin-claude-plugin>
   - 빠른 설치:
-    - ```git clone https://github.com/OutlineDriven/odin-claude-plugin.git && cp -r ./odin-claude-plugin/ ~/.claude/ && claude plugin marketplace add OutlineDriven/odin-claude-plugin && claude plugin install odin@odin-marketplace```
+    - ```wget -O ~/.claude/CLAUDE.md https://raw.githubusercontent.com/OutlineDriven/odin-claude-plugin/refs/heads/main/CLAUDE.md && claude plugin marketplace add OutlineDriven/odin-claude-plugin && claude plugin install odin@odin-marketplace```
 - **Codex CLI:** <https://github.com/OutlineDriven/odin-codex-plugin>
   - 빠른 설치:
     - ```git clone https://github.com/OutlineDriven/odin-codex-plugin.git && cp -r ./odin-codex-plugin/ ~/.codex/```
