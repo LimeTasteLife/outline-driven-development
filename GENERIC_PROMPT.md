@@ -99,7 +99,7 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 | `ls` | `eza` |
 | `find` | `fd` |
 | `grep` | `git grep` / `rg` / `ast-grep` |
-| `cat` | `bat -P -p -n --color=always` |
+| `cat` | `bat -P -p -n` |
 | `ps` | `procs` |
 | `diff` | `difft` |
 | `time` | `hyperfine` |
@@ -107,6 +107,17 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 | `rm` | `rip` |
 
 **Preferences:** Context args: `ast-grep -C`, `git grep -n -C`, `rg -C`, `bat -r`. Read with offset/limit for large files.
+
+### Token-Efficient CLI Output
+Minimize output tokens at the command layer. ANSI colors waste 15-25% of tokens.
+
+- **Prefer** `--json`/`--plain` over decorated text when parsing output
+- **Cap output**: `| head -n 50` default for unbounded commands
+- **Discovery pattern**: `rg -l` / `fd --max-results N` → then targeted `bat -r` / `Read -offset -limit`
+- **Counting**: `rg -c` / `git grep -c` when only totals needed
+- **Existence**: `rg -q` / `fd -q` for exit-code-only checks
+- Per-tool: `bat -r START:END` (range), `rg --no-heading --max-count N`, `fd -1` (first match), `eza -1` (names only), `tokei --output json | jql`
+
 **Headless [MANDATORY]:** No TUIs (top/htop/vim/nano). No pagers (pipe to cat or `--no-pager`). Prefer `--json`/plain text. Stdin-waiting = CRITICAL FAILURE.
 **File Operations:** ALWAYS read before edit. Prefer `native-patch` for edits. NEVER write new files unless explicitly required. Edit existing > create new.
 
@@ -116,7 +127,7 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 3. Validate count (<50 files) before proceeding
 4. Execute scoped operation on validated file set
 **Enforcement triggers:** ast-grep across dirs | git grep broad patterns (rg fallback) | srgn multi-file | batch edits
-**Patterns:** `fd -e rs -E target` → `ast-grep run -p '$PAT' -l rs` | `fd -e ts -E node_modules` → `git grep -n 'pattern' -- '*.ts'` (fallback: `rg 'pattern' -t ts`)
+**Patterns:** `fd -e rs -E target` → `ast-grep run -p '$PAT' -l rs` | `fd -e ts -E node_modules` → `git --no-pager grep -n 'pattern' -- '*.ts'` (fallback: `rg 'pattern' -t ts`)
 
 **BEFORE coding:** Prime problem class, constraints, I/O spec, metrics, unknowns, standards/APIs.
 **CS anchors:** ADTs, invariants, contracts, O(?) complexity, partial vs total functions | Structure selection, worst/avg/amortized analysis, space/time trade-offs, cache locality | Unit/property/fuzz/integration, assertions/contracts, rollback strategy
@@ -182,13 +193,13 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 
 ### Core System & File Ops
 - **`eza`**: `eza --tree --level=2` | `eza -l --git` | `eza -l --sort=size`
-- **`bat`**: `bat -P -p -n --color=always` (default). Flags: `-l` (lang), `-A` (show-all), `-r` (range), `-d` (diff)
+- **`bat`**: `bat -P -p -n` (default). Flags: `-l` (lang), `-A` (show-all), `-r` (range), `-d` (diff)
 - **`zoxide`**: `z foo` | `zi foo` (fzf) | `zoxide query|add|remove`
 - **`rargs`**: `rargs -p '(.*)\.txt' mv {0} {1}.bak`
 
 ### Search & Discovery
 - **`fd`** [PRIMARY]: `fd -e py` | `fd -E venv` | `fd -g '*.test.ts'` | `fd -x cmd {}` | `fd -X cmd`
-- **`git grep`** [PRIMARY text search]: `git grep -n "pattern"` | `git grep -n --heading --break "pattern"` | `git grep -n -F 'literal'` | `git grep -n -C 3 'pattern'`
+- **`git grep`** [PRIMARY text search]: `git --no-pager grep -n "pattern"` | `git --no-pager grep -n --heading --break "pattern"` | `git --no-pager grep -n -F 'literal'` | `git --no-pager grep -n -C 3 'pattern'`
 - **`rg`** [FALLBACK text search]: `rg "pattern" -t rs` | `rg -F 'literal'` | `rg pattern -A 3 -B 2` | `rg pattern --json`
 - **`tokei`**: `tokei ./src` | `tokei --output json` | `tokei --files` — ALWAYS run first to assess scope
 
@@ -336,11 +347,11 @@ Per-file when glob insufficient (CWD only—no [path] arg): `fd -e <ext> --strip
 - `fd -e ts -X tokei` — metrics for found files
 
 ### git grep Patterns & Usage
-**Basic:** `git grep -n 'pattern'` | `git grep -n -F 'literal string'` | `git grep -n -E 'regex'`
-**Context:** `git grep -n -A 3 -B 2 'pattern'` (after/before) | `git grep -n -C 5 'pattern'` (both)
-**Output:** `git grep -n --heading --break 'pattern'` | `git grep -l 'pattern'` (files only) | `git grep -c 'pattern'` (count)
-**Filtering:** `git grep -n 'pattern' -- '*.py'` (pathspec) | `git grep -n 'pattern' -- 'src/**/*.ts'` | `git grep -n 'pattern' -- ':!test*'`
-**Advanced:** `git grep -n --and -e 'foo' -e 'bar'` | `git grep -n -P 'pattern'` | `git grep -n -w 'pattern'` (word boundary)
+**Basic:** `git --no-pager grep -n 'pattern'` | `git --no-pager grep -n -F 'literal string'` | `git --no-pager grep -n -E 'regex'`
+**Context:** `git --no-pager grep -n -A 3 -B 2 'pattern'` (after/before) | `git --no-pager grep -n -C 5 'pattern'` (both)
+**Output:** `git --no-pager grep -n --heading --break 'pattern'` | `git --no-pager grep -l 'pattern'` (files only) | `git --no-pager grep -c 'pattern'` (count)
+**Filtering:** `git --no-pager grep -n 'pattern' -- '*.py'` (pathspec) | `git --no-pager grep -n 'pattern' -- 'src/**/*.ts'` | `git --no-pager grep -n 'pattern' -- ':!test*'`
+**Advanced:** `git --no-pager grep -n --and -e 'foo' -e 'bar'` | `git --no-pager grep -n -P 'pattern'` | `git --no-pager grep -n -w 'pattern'` (word boundary)
 **Fallback with rg:** Use `rg` for untracked files or `--no-index` workflows: `rg 'pattern' -t rs` | `rg pattern -A 3 -B 2`
 
 ### tokei Usage
@@ -427,7 +438,7 @@ Tactics: dry-run first, checkpoint before apply, subset test, incremental verify
 | Task | Tool | Example |
 |------|------|---------|
 | Find files | fd | `fd -e ts -E node_modules` |
-| Search code | git grep (fallback: rg) | `git grep -n 'pattern' -C 3` |
+| Search code | git grep (fallback: rg) | `git --no-pager grep -n 'pattern' -C 3` |
 | AST match | ast-grep | `ast-grep run -p '$PAT' -l ts` |
 | AST rewrite | ast-grep | `ast-grep run -p '$OLD' -r '$NEW' -U` |
 | Scoped replace | srgn | `srgn --py comments 'TODO' -- 'DONE'` |

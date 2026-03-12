@@ -171,7 +171,7 @@ Calibration: Success +0.1 (cap 1.0), Failure -0.2 (floor 0.0). Default: research
 Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory management schema | Type stable design | Error handling strategy | Performance optimization plan | Reliability assessment | Security guards (when applicable)
 
 **Tidy-First:** Coupling = change propagation. Types: Structural (imports) | Temporal (co-changing) | Semantic (shared patterns).
-**Analysis:** Structural: `ast-grep -p 'import $X from "$M"'` | Temporal: `git log --name-only` | Semantic: `git grep -l 'pattern'` (fallback: `rg -l 'pattern'`)
+**Analysis:** Structural: `ast-grep -p 'import $X from "$M"'` | Temporal: `git log --name-only` | Semantic: `git --no-pager grep -l 'pattern'` (fallback: `rg -l 'pattern'`)
 **Decision:** High coupling → Tidy first (separate concerns) → Apply change. Low coupling → Direct change.
 **Separation:** Extract Function | Split File | Interface Extraction
 **Refinement:** Rename for Clarity → Normalize Structure → Remove Dead Code
@@ -234,13 +234,24 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
 **Pre-edit:** Read target file; understand structure; preview first; small test patterns; explicit preview->apply workflow.
 **Workflow:** fd (discover) → gtags/ctags (index) → ast-grep/git grep (search, rg fallback) → Edit suite (transform) → git (commit) → git-branchless (manage)
 
-**Banned [HARD—REJECT]:** `ls`→`eza` | `find`→`fd` | `grep`→`git grep`/`rg`/`ast-grep` | `cat`→`bat -P -p -n --color=always` | `ps`→`procs` | `diff`→`difft` | `time`→`hyperfine` | `sed`→`srgn`/`ast-grep -U` | `rm`→`rip` | `perl`/`perl -i`→`ast-grep -U`/`awk`
+**Banned [HARD—REJECT]:** `ls`→`eza` | `find`→`fd` | `grep`→`git grep`/`rg`/`ast-grep` | `cat`→`bat -P -p -n` | `ps`→`procs` | `diff`→`difft` | `time`→`hyperfine` | `sed`→`srgn`/`ast-grep -U` | `rm`→`rip` | `perl`/`perl -i`→`ast-grep -U`/`awk`
 **Preferences:** Context args: `ast-grep -C`, `git grep -n -C`, `rg -C`, `bat -r`, `Read -offset/-limit`
+
+### Token-Efficient CLI Output
+Minimize output tokens at the command layer. ANSI colors waste 15-25% of tokens.
+
+- **Prefer** `--json`/`--plain` over decorated text when parsing output
+- **Cap output**: `| head -n 50` default for unbounded commands
+- **Discovery pattern**: `rg -l` / `fd --max-results N` → then targeted `bat -r` / `Read -offset -limit`
+- **Counting**: `rg -c` / `git grep -c` when only totals needed
+- **Existence**: `rg -q` / `fd -q` for exit-code-only checks
+- Per-tool: `bat -r START:END` (range), `rg --no-heading --max-count N`, `fd -1` (first match), `eza -1` (names only), `tokei --output json | jql`
+
 **Headless [MANDATORY]:** No TUIs (top/htop/vim/nano). No pagers (pipe to cat or `--no-pager`). Prefer `--json`/plain text. Stdin-waiting = CRITICAL FAILURE.
 
 ### Search & Discovery
 - **`fd`** [PRIMARY]: `fd -e py` | `fd -E venv` | `fd -g '*.test.ts'` | `fd -x cmd {}` | `fd -X cmd`
-- **`git grep`** [PRIMARY text search]: `git grep -n "pattern"` | `git grep -n --heading --break "pattern"` | `git grep -n -F 'literal'` | `git grep -n -C 3 'pattern'`
+- **`git grep`** [PRIMARY text search]: `git --no-pager grep -n "pattern"` | `git --no-pager grep -n --heading --break "pattern"` | `git --no-pager grep -n -F 'literal'` | `git --no-pager grep -n -C 3 'pattern'`
 - **`rg`** [FALLBACK text search]: `rg "pattern" -t rs` | `rg -F 'literal'` | `rg pattern -A 3 -B 2` | `rg pattern --json`
 
 **fd-First [MANDATORY before large ops]:** `fd -e <ext>` discover → `fd -E` exclude noise → validate count (<50) → execute scoped.
@@ -279,7 +290,7 @@ Architecture blueprint | Data flow diagram | Concurrency pattern map | Memory ma
 
 ### Core System & Perf
 - **`eza`**: `eza --tree --level=2` | `eza -l --git` | `eza -l --sort=size`
-- **`bat`**: `bat -P -p -n --color=always` (default). Flags: `-l` (lang), `-A` (show-all), `-r` (range), `-d` (diff), `-n` (line numbers)
+- **`bat`**: `bat -P -p -n` (default). Flags: `-l` (lang), `-A` (show-all), `-r` (range), `-d` (diff), `-n` (line numbers)
 - **`zoxide`**: `z foo` | `zi foo` (fzf) | `zoxide query|add|remove`
 - **`rargs`**: `rargs -p '(.*)\.txt' mv {0} {1}.bak`
 - **`nomino`**: `nomino -r '(.*)\.bak' '{1}.txt'` | **`hck`**: `hck -f 1,3 -d ':'` | **`shellharden`**: `shellharden --replace script.sh`
