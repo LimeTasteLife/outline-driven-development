@@ -29,7 +29,7 @@ Auto-Skip: <50 LOC, trivial, user requests direct. Mandatory: 2+ concerns, 2+ di
 <tools>
 **Primary:** `tokei` (scope), `fd` (discover), `ast-grep` (code), `srgn` (regex), `repomix` (context, compress recommended)
 **Transform Selection:** Scoped → srgn | Structural → ast-grep (both tree-sitter)
-**Support:** `eza` (list), `bat -P -p -n` (read), `git grep` (primary text), `rg` (fallback text), `difft` (diff), `jql`/`jaq` (JSON), `fend` (calc)
+**Support:** `eza` (list), `bat -P -p -n` (read), `git grep` (primary text), `rg` (fallback text), `difft` (diff), `jql`/`jaq` (JSON), Calculator Tool (defaults to `fend`) (calc)
 
 **BANNED:** `ls`→eza | `find`→fd | `grep -r`→git grep/rg/ast-grep | `cat`→`bat -P -p -n` | `sed -i`→ast-grep -U/srgn | `diff`→difft | `ps`→procs | `time`→hyperfine | `rm`→rip | `perl -i`→ast-grep/awk
 **Token-efficient:** Prefer `-l`/`-c`/`-q` modes. Cap: `| head -n 50`. Range: `bat -r`. Discovery-first: `rg -l` → `bat -r`.
